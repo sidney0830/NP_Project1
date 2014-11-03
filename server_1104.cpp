@@ -557,6 +557,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
             if (readFromPipe)//後
             {
                 close(pipe_fd[pipe_array[now_pipe_count][1]][0]);//減一是因為single pipe
+                // test git
             }
         }
         else if (childpid == 0)
