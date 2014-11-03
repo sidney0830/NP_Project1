@@ -5,7 +5,7 @@
 //  Created by Sidney on 2014/10/21.
 //  Copyright (c) 2014年 Sidney. All rights reserved.
 //
-#include <wait.h>
+// #include <wait.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #define SERV_TCP_PORT 3000
 
@@ -40,6 +41,7 @@ int pipe_fd[MAXPIPE][2];
 int now_pipe_count= 0;
 int now_count=0;
 // int now_pipe_count = 0;
+int childState;
 void clear_pipe();
 
 int  main(int argc, char *argv[])
@@ -165,7 +167,9 @@ void str_echo(int sockfd)
     }
 }
 
-
+void catch_function(int signal) {
+  
+}
 
 int cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
 {
@@ -523,16 +527,11 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                 // pipe_array[now_pipe_count+temp][1] //此index同,但裡面已揪有誰要write他的id
                 // WriteSame_index = now_pipe_count+1;
                 // WriteSame_count = now_pipe_count;
-
-
                 }
             if (readFromPipe)//後
             {
-
                 // close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
-                
                 close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);//減一是因為single pipe
-
                 cerr << now_pipe_count << ", readFromPipe" << endl;
             }
         }
@@ -567,7 +566,6 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                     if(samepipe)
                     {
                         dup2 (pipe_fd[ WriteSame_count ][1], STDOUT_FILENO);
-
                     }
                     else 
                     {
@@ -589,12 +587,19 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                     dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
                     // j=line_sep_count;
                     // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    return 0;
+                    exit(0);
+                    // return 0;
                 }
 
         }//childpid
-        
-        wait(NULL);
+        if(0)
+        {
+        close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);
+        close(pipe_fd[ pipe_array[now_pipe_count ][1]] [1]);
+        }
+        // wait(NULL);
+        int a= wait(&childState);
+        cerr << "wait: " << a << endl;
 
         now_pipe_count++;
 
@@ -624,7 +629,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
     // }
 // memset(array, 0, sizeof(array[0][0]) * m * n);
 
-    }
+}
 // int output(int fd,char* output_line)
 // {
 
