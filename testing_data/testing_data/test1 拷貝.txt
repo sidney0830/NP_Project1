@@ -1,0 +1,25 @@
+% printenv PATH
+PATH=bin:.
+% ls
+bin
+test.html
+test2.html
+% setenv PATH .
+% printenv PATH
+PATH=.
+% ls
+Unknown command: [ls]
+% setenv PATH bin
+% setenv LANG en_US
+% printenv LANG
+LANG=en_US
+% ls bin
+cat
+ls
+noop
+number
+removetag
+removetag0
+% date
+Unknown command: [date]
+% exit

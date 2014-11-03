@@ -1,0 +1,55 @@
+***************
+** Welcome to the information server. **
+****************************************
+% printenv PATH
+bin:.
+% ls
+bin
+test.html
+% setenv PATH .
+% printenv PATH
+.
+% ls
+Unknown command: [ls]
+---after print input -----
+% setenv PATH bin
+---_after readline -----
+---Splitting string "setenv PATH bin
+" 
+ #PARSEEEEE#lenght=3#setenv--PATH
+---after print input -----
+% ls -al bin
+---_after readline -----
+---Splitting string "ls -al bin
+" 
+ #PARSEEEEE#lenght=3#ls---al
+total 280
+drwxr-xr-x@ 14 mac  staff    476 10 30 21:43 .
+drwxr-xr-x   5 mac  staff    170 10 25 17:12 ..
+-rw-r--r--@  1 mac  staff   6148 10 30 17:26 .DS_Store
+-rwxr-xr-x   1 mac  staff  19648 10 28 19:13 cat
+-rwxr-xr-x   1 mac  staff  34736 10 28 19:13 ls
+-rwxr-xr-x   1 mac  staff   4280 10 28 19:19 noop
+-rwxr-xr-x@  1 mac  staff     28 10 13  2011 noop.cpp
+-rwxr-xr-x   1 mac  staff  20744 10 28 19:19 number
+-rwxr-xr-x@  1 mac  staff    729 10 13  2011 number.cpp
+-rwxr-xr-x   1 mac  staff   8876 10 28 19:20 removetag
+-rwxr-xr-x@  1 mac  staff    858 10 13  2011 removetag.cpp
+-rwxr-xr-x   1 mac  staff   9444 10 28 19:20 removetag0
+-rwxr-xr-x@  1 mac  staff    940 10 13  2011 removetag0.cpp
+-rw-r-----@  1 mac  staff     39 10 30 19:22 tt.txt
+---after print input -----
+% date
+---_after readline -----
+---Splitting string "date
+" 
+ #PARSEEEEE#lenght=1#date--(null)
+Unknown command: [date]
+---after print input -----
+% exit
+---_after readline -----
+---Splitting string "exit
+" 
+ #PARSEEEEE#lenght=1#exit--(null)
+---after print input -----
+% 
