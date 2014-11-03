@@ -114,6 +114,3 @@ test2.html
 test2.txt
 test3.txt
 % ls |2
-% UNKNOWN_COMMAND
-Unknown command: [UNKNOWN_COMMAND]
-% removetag test.html | cat

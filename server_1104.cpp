@@ -43,6 +43,9 @@ int now_count=0;
 // int now_pipe_count = 0;
 int childState;
 void clear_pipe();
+void (*prev_handler)(int);
+void my_handler (int param);
+sig_atomic_t signaled = 0;
 
 int  main(int argc, char *argv[])
 {
@@ -140,7 +143,7 @@ void str_echo(int sockfd)
         
         debug++;
         // std::cout<<"______________after readline____________"<<std::endl;     
-        fprintf(stderr, "---_after readline -----\n");
+        // fprintf(stderr, "---_after readline -----\n");
 
         if (n == 0) return; /* connection terminated */		
         else if (n < 0) 
@@ -161,7 +164,7 @@ void str_echo(int sockfd)
         // }
         // cutt
         cut_line(sockfd,line,debug);
-        fprintf(stderr, "---after print input -----\n");
+        // fprintf(stderr, "---after print input -----\n");
 
         
     }
@@ -317,6 +320,10 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
     // remove_space(line[MAXLINE])
     for(int j=0;j<line_sep_count;j++)
     {
+        if(line[j][0]==NULL)
+        {
+            return 0;
+        }
         bool samepipe=0;
         bool known=1;
         legal_cmd="legal";
@@ -585,25 +592,34 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                     std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
                     // fprintf (stderr,"legaglll=%d $$$$$$\n",legal_cmd); 
                     dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
+                     // signal(SIGCHLD, reaper);
                     // j=line_sep_count;
                     // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    exit(0);
-                    // return 0;
+                    // exit(0);
+                    raise(SIGINT);
+                    return 0;
                 }
 
         }//childpid
-        if(0)
+        
+        // signal( SIGCHLD, reapchild); 
+        wait(NULL);
+        prev_handler = signal (SIGINT, my_handler);
+        if(signaled ==1)
         {
-        close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);
-        close(pipe_fd[ pipe_array[now_pipe_count ][1]] [1]);
+
+            close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);
+            close(pipe_fd[ pipe_array[now_pipe_count ][1]] [1]);
+            now_pipe_count--;
+            signaled=0;
+            fprintf (stderr,"unknown--------\n");
         }
-        // wait(NULL);
-        int a= wait(&childState);
-        cerr << "wait: " << a << endl;
+        // int a= wait(&childState);
+        // cerr << "wait: " << a << endl;
 
         now_pipe_count++;
 
-        fprintf (stderr,"!!!finish forkkk\n");
+        // fprintf (stderr,"!!!finish forkkk\n");
             if( strcmp(legal_cmd,"legal")==0)/*應該要legal, 且前面有pipe ,才要 now_cont ＋1 */
         {
                 for (int i=0;i<=now_pipe_count;i++)pipe_array[i][0]--;//所有都要 --
@@ -629,6 +645,10 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
     // }
 // memset(array, 0, sizeof(array[0][0]) * m * n);
 
+}
+void my_handler (int param)
+{
+  signaled = 1;
 }
 // int output(int fd,char* output_line)
 // {
