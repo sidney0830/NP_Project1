@@ -5,7 +5,7 @@
 //  Created by Sidney on 2014/10/21.
 //  Copyright (c) 2014年 Sidney. All rights reserved.
 //
-
+#include <wait.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <regex>  
 #include <sys/types.h>
 #define SERV_TCP_PORT 3000
 
@@ -294,10 +293,6 @@ int cut_line (int fd,char *line ,int debug)
 }
 
 
-bool has_any_digits(const std::string& s)
-{
-    return std::any_of(s.begin(), s.end(), ::isdigit);
-}
 
 
 char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
