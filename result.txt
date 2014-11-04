@@ -1,9 +1,6 @@
 ****************************************
 ** Welcome to the information server. **
 ****************************************
-% ls |1
-% ctt
-Unknown command: [ctt]
-% number
-Unknown command: [number]
-% 
+% printenv PATH
+PATH=bin:.
+% ls

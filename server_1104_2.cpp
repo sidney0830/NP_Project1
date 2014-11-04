@@ -462,10 +462,9 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
 //     // printf ("%s\n",patt);
 //     patt = strtok (NULL, ":");
 //   }    
-    if(strcmp(patt,"bin:.")==0)patt="bin";
-    if(strcmp(patt,".")==0)patt=".";
-
-        if (!isKnownCommand("bin",line[j][0]))
+    
+char *aaa=getenv("PATH");
+        if (!isKnownCommand(aaa,line[j][0]))
         {
             dup2 (fd, STDERR_FILENO);
             dup2 (fd, STDOUT_FILENO);
@@ -750,14 +749,35 @@ void welcome (int sockfd)
 }
 
 bool isKnownCommand(char *path, char *cmd) {
-    struct dirent *ent; 
-    DIR *dir;
-    if ((dir = opendir(path)) != NULL) {
-        while ( (ent = readdir(dir)) != NULL) {
-            if (strcmp(ent->d_name, cmd) == 0) {
-                return true;
+    int i=0;
+    char* pch[10];
+     // cerr<<"pch[i]"<<path<<endl; 
+    pch[0] = strtok(path,":");
+    // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
+    while (path[i] != NULL)
+    {   
+        i++;            
+        pch[i] = strtok (NULL, ":"); 
+       
+        // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+    }
+
+    for(int j=0;j<i;j++)
+    {
+        struct dirent *ent; 
+        DIR *dir;
+        if ((dir = opendir(pch[j])) != NULL) 
+        {
+            while ( (ent = readdir(dir)) != NULL) 
+            {
+                if (strcmp(ent->d_name, cmd) == 0) {
+                    // cerr<<"*********"<<endl;
+                    return true;
+                }
             }
         }
-    }
-    return false;
+
+     }   
+
+   return false;
 }
