@@ -1,3 +1,3 @@
-ls |2
-UNKNOWN_COMMAND
-removetag test.html | cat
+ls |1
+ctt
+number

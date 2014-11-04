@@ -380,8 +380,8 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                         }
                         else
                         {
-                            WriteSame_index = now_pipe_count + temp;
-                            WriteSame_count = now_pipe_count;
+                            WriteSame_index = now_pipe_count + temp;//要寫道哪個
+                            WriteSame_count = now_pipe_count;//現在的 pipe  id 
                         } 
                         /*pipe_array[now_pipe_count+temp][1]:record  whom will get pipe*/
                     }
@@ -467,7 +467,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
         }
         for (int i = 0; line[j][i]!=NULL; i++) /* do this write to file "<"  */
         {
-            fprintf (stderr,"i==%d,count=%d \n",i,line_sep_count);
+            fprintf (stderr,"i==%d,count=%d \n" , i ,line_sep_count);
             // fprintf (stderr,"maydaycha: %d", line_sep_count);
             if (strcmp(line[j][i], ">") == 0) 
             {
