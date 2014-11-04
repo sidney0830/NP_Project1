@@ -5,7 +5,7 @@
 //  Created by Sidney on 2014/10/21.
 //  Copyright (c) 2014年 Sidney. All rights reserved.
 //
-
+// #include <wait.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -17,8 +17,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <regex>  
+#include <sys/wait.h>
+#include <signal.h>
 #include <sys/types.h>
+#include <dirent.h>
+
 #define SERV_TCP_PORT 3000
 
 #define MAXLINE 10000
@@ -41,7 +44,13 @@ int pipe_fd[MAXPIPE][2];
 int now_pipe_count= 0;
 int now_count=0;
 // int now_pipe_count = 0;
+int childState;
 void clear_pipe();
+void (*prev_handler)(int);
+void my_handler (int param);
+bool isKnownCommand(char *path, char *cmd);
+
+sig_atomic_t signaled = 0;
 
 int  main(int argc, char *argv[])
 {
@@ -51,6 +60,7 @@ int  main(int argc, char *argv[])
     clear_pipe();
     
     setenv("PATH","bin:.",1);
+    
     int directory = chdir("./ras");
 	/*
      * Open a TCP socket (an Internet stream socket).
@@ -139,7 +149,7 @@ void str_echo(int sockfd)
         
         debug++;
         // std::cout<<"______________after readline____________"<<std::endl;     
-        fprintf(stderr, "---_after readline -----\n");
+        // fprintf(stderr, "---_after readline -----\n");
 
         if (n == 0) return; /* connection terminated */		
         else if (n < 0) 
@@ -160,12 +170,11 @@ void str_echo(int sockfd)
         // }
         // cutt
         cut_line(sockfd,line,debug);
-        fprintf(stderr, "---after print input -----\n");
+        // fprintf(stderr, "---after print input -----\n");
 
         
     }
 }
-
 
 
 int cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
@@ -236,28 +245,6 @@ int cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
 
 }
 
-int pipe (int fd,char*line[MAXLINE] ,int pipe_th)
-{
-
-// pipe_fd[now_cmd])<0
-    if ( pipe(pipe_fd[pipe_th]) < 0 )
-    {
-        //error
-    }
-    // for(int i=0;;i++)
-    // {
-
-    //     pipe_array[pipe_th][0]= find line[]; //output to whom ? //find " | "
-    //     pipe_array[pipe_th][1]=  //intput get whose ? 
-    //     pipe_array[pipe_th][2]=  //done or not
-
-    // }  
-    // // int **pipe_array ＝new int [];
-    // pipe_array
-    // MAXPIPE
-
-
-}
 
 int cut_line (int fd,char *line ,int debug)
 {
@@ -278,20 +265,20 @@ int cut_line (int fd,char *line ,int debug)
     int j=0;
     for(int i=0,k=0;i<line_sep_count;i++)
     {
-       threeDArray[j][k] = pch[i] ;
+     threeDArray[j][k] = pch[i] ;
           // fprintf(stderr, "@@%s",threeDArray[j][k]);
-       if(pch[i][0]=='|')
-       {
-           j++;
-           k=0;
-       }
-       else
-       {
-           k++;
-       }
-   }
+     if(pch[i][0]=='|')
+     {
+         j++;
+         k=0;
+     }
+     else
+     {
+         k++;
+     }
+ }
 
-   line_sep_count=j+1;
+ line_sep_count=j+1;
 
     // for(int j=0;j<line_sep_count;j++)
     // {
@@ -302,9 +289,9 @@ int cut_line (int fd,char *line ,int debug)
     //     fprintf(stderr, "\n");
     // }
 
-   parse(fd,line_sep_count,threeDArray);
-   dup2(STDIN_OLD,0);
-   dup2(STDOUT_OLD,2);
+ parse(fd,line_sep_count,threeDArray);
+ dup2(STDIN_OLD,0);
+ dup2(STDOUT_OLD,2);
     // printf ("=cut line=%d===debg = %d/",line_sep_count,debug);
 
     // printf ("===2===%s====\n",pch[1]);
@@ -312,14 +299,10 @@ int cut_line (int fd,char *line ,int debug)
     // printf ("===3===%s====\n",pch[2]);
 
 
-   return 0;
+ return 0;
 }
 
 
-bool has_any_digits(const std::string& s)
-{
-    return std::any_of(s.begin(), s.end(), ::isdigit);
-}
 
 
 char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
@@ -327,129 +310,124 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
     fprintf (stderr,"%slengh=%d  %s-%s-%s-%s\n","[[PARSE START]]",line_sep_count,line[0][0],line[1][0],line[2][0],line[3][0]);
     // fprintf (stderr,"sizeof line[0] = %d",sizeof(line[0])/sizeof( line[0][0] ));
     // for(int i=0;i<line_sep_count;i++)
-    // {
+    // {char *patt=getenv("PATH");
     //可能要有for去跑去掉空白的一個指令   //一行多個指令
-
+// prev_handler = signal (SIGINT, my_handler);
     int write_file=0;
     int WriteSame_index=-1;
     int WriteSame_count=-1;
     char *filename;
-    int do_pipe;
+    
+    char *patt ;
     // bool writeToPipe = false, readFromPipe = false;
     char *legal_cmd="legal";
     // remove_space(line[MAXLINE])
+
     for(int j=0;j<line_sep_count;j++)
     {
-        bool ifneedtopiep=0;
+        patt = getenv("PATH");
+        if(line[j][0]==NULL)
+        {
+            return 0;
+        }
+
+        // if (isKnownCommand("bin", line[j][0])) {
+        //     int unknownCmd = true;
+        // }
+
+        // cerr << "cmd: " << line[j][0] << endl;
+        // bool tt = isKnownCommand("bin", line[j][0]);
+        // cerr << "is know "<< tt <<endl;
+
+        bool samepipe=0;
         bool known=1;
         legal_cmd="legal";
-        WriteSame_index=-1;
-        WriteSame_count=-1;
 
+        WriteSame_index= -1;
+        WriteSame_count= -1;
+
+        // char *a=line[j][0];
+        
         bool writeToPipe = false, readFromPipe = false;
-do_pipe=1;
-
-        // fprintf(stderr, "\n cmd =%s\n",line[j][0]);
-       
+        
         if( line_sep_count > 1 )//must have pipe
         {
             //
             // // threeDArray     
             for(int i=0; line[j][i]!=NULL ;i++)
             {
+                writeToPipe = false;
                 if (line[j][i][0]=='|')///
                 {
+
+                    writeToPipe = true;
+                    cerr << now_pipe_count << ", Need to Write to Pipe: " << line[j][0] << endl;
                     if(line[j][i][1]!=NULL)/// have pipe_number 
                     { 
                         int temp = atoi(++line[j][i]);
                         /*pipe_array[now_pipe_count][0]:record to input which pipe*/
-                        for(int kk=0;kk<now_pipe_count;kk++)
-                        {
-                            if(pipe_array[kk][0]==temp)
-                            {
-                                do_pipe=0;
-                                now_pipe_count--;
-                            }
+                        pipe_array [ now_pipe_count ][0] = temp;
 
-                        }
-                        if(do_pipe==1)
-                        {
-                            pipe_array[now_pipe_count][0] = temp;
+                        int temp_write = pipe_array [ now_pipe_count + temp ][1];//
 
-                            if(pipe(pipe_fd[now_pipe_count])<0)
-                            {
-                               err_dump("pipe error");
-                            }
+                        if( temp_write<0 )
+                        { 
+                            pipe_array[ now_pipe_count + temp][1]= now_pipe_count;
+                            cerr << "save " << now_pipe_count << "to " << (now_pipe_count + temp) << endl;
                             
+                            if (pipe(pipe_fd[now_pipe_count]) < 0)
+                            {
+                                err_dump("pipe error");
+                            }
                         }
+                        else
+                        {
+                            WriteSame_index = now_pipe_count + temp;//要寫道哪個
+                            WriteSame_count = temp_write;//現在的 pipe  id 
+                            samepipe = 1;
+                        } 
                         /*pipe_array[now_pipe_count+temp][1]:record  whom will get pipe*/
-
                     }
                     else
                     {
                         // int temp = atoi(++line[j][i]);
-                        // int temp = atoi(++line[j][i]);
-                        /*pipe_array[now_pipe_count][0]:record to input which pipe*/
-                        for(int kk=0;kk<now_pipe_count;kk++)
+                        pipe_array[now_pipe_count][0] = 1;
+                        int temp_write = pipe_array [now_pipe_count + 1][1];
+                        if(temp_write<0) 
                         {
-                            if(pipe_array[kk][0]==1)
-                            {
-                                do_pipe=0;
-                                now_pipe_count--;
-                            }
-
-                        }
-                        if(do_pipe==1)
-                        {
-                            pipe_array[now_pipe_count][0] = 1;
-
+                            pipe_array[ now_pipe_count + 1 ][ 1 ]= now_pipe_count;
+                            
                             if(pipe(pipe_fd[now_pipe_count])<0)
                             {
-                               err_dump("pipe error");
+                                err_dump("pipe error");
                             }
-                            // now_pipe_count++
                         }
+                        else//原本就在的不要動他
+                        {
 
-                        
-                    }
-                    
-                    // if(pipe(pipe_fd[now_pipe_count])<0)
-                    // {
-                    //     err_dump("pipe error");
-                    // }
-                    
-                    line[j][i]=NULL;
-                    ifneedtopiep=1;
+                            WriteSame_index = now_pipe_count + 1;
+                            WriteSame_count = temp_write;
+                            samepipe = 1;
 
+                        }                         
+                    }          
+
+                    line[j][i] = NULL;
+                    
+                    // now_pipe_count++;
                 } 
 
             }
 
-        }
+        }//must have pipe
 
-       
-        //   for(int jj=0;jj<line_sep_count;jj++)
-        //   {
-        //      for(int i=0;i<4;i++)
-        //      {
-        //     fprintf(stderr, "+%s",line[jj][i]);
-        //      }
-        // fprintf(stderr, "\n");
-        //   }
-        //     int pipe_nume= atoi( aa.c_str() ) ; 
-
-        //   //   if(pipe(pipe_fd[now_cmd])<0){
-        //   //   err_dump("pipe error");
-        //   // }
-
-        // }
-
-         fprintf(stderr, "cmd= %s cmd_count= %d\n",line[j][0],now_pipe_count);
-         if(strcmp(line[j][0],"printenv")==0)
-         {
+        fprintf(stderr, "cmd= %s ,cmd_count= %d\n",line[j][0],now_pipe_count);
+        char *env;
+        if(strcmp(line[j][0],"printenv")==0)
+        {
 
                 ///裡面要有cut_cmd 去切切切
-            char *env;
+            
             env = getenv(line[j][1]);
             // char *pathh;
             if(env != NULL)
@@ -475,9 +453,30 @@ do_pipe=1;
             close(fd);
             exit(0);
         }
+         // bool tt = isKnownCommand("bin", line[j][0]);
+         // cerr<< env <<" ,issssssssss" <<endl;
+        // patt = strtok(patt,":");
+// patt = strtok(patt,":");
+//   while (patt != NULL)
+//   {
+//     // printf ("%s\n",patt);
+//     patt = strtok (NULL, ":");
+//   }    
+    
+char *aaa=getenv("PATH");
+        if (!isKnownCommand(aaa,line[j][0]))
+        {
+            dup2 (fd, STDERR_FILENO);
+            dup2 (fd, STDOUT_FILENO);
+                    // legal_cmd = "non";
+            std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
+                    
+            // dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
+            return 0;
+        }
         for (int i = 0; line[j][i]!=NULL; i++) /* do this write to file "<"  */
         {
-            fprintf (stderr,"i==%d,count=%d \n",i,line_sep_count);
+            fprintf (stderr,"i==%d,count=%d \n" , i ,line_sep_count);
             // fprintf (stderr,"maydaycha: %d", line_sep_count);
             if (strcmp(line[j][i], ">") == 0) 
             {
@@ -497,30 +496,24 @@ do_pipe=1;
                 break;
             }
         }//for
-
-        // fprintf (stderr,"--begin forkkk\n");
-            // printf ("begin forkkk");
-        // for(int i=0 ;i < now_pipe_count ;i++)
-        // {
-        //     if(pipe_array[i][0]==0)readFromPipe=true;
-        // }
+        // if(access( ,F_OK)!=-1)
+        
         /*是第一個且不是最後一個 , 中間項 *//*梅考慮：最後是 ｜ */
-        if ( j == 0 &&((j+1) != line_sep_count) )
-        {
-            cerr << now_pipe_count << ", Need to Write to Pipe: " << line[j][0] << endl;
-            writeToPipe = true;
-            
-        }
-        int once=0;
+        // if ( j == 0 && ((j+1) != line_sep_count) || j>0)
+        // {
+        //     cerr << now_pipe_count << ", Need to Write to Pipe: " << line[j][0] << endl;
+        //     writeToPipe = true;
+
+        // }
+        // int once=0;
         for(int i=0;i < now_pipe_count ;i++)
         {
             if(pipe_array[i][0]==0)//this now is pipe_array[now_pipe][1] = pipe fd
             {
                 readFromPipe=true;
                 cerr << now_pipe_count  << ", Need to Read from Pipe: " << line[j][0] << endl;
-                once++;
+                // once++;
             }
-
         }
         
         // if (j > 0) /** have to read from pipe *//*梅考慮：接前行要掃前面pipearray*/
@@ -533,12 +526,13 @@ do_pipe=1;
         //     // dup2 ( pipe_fd[0][0], STDIN_FILENO) ;//上衣個pipe
         //     // close( pipe_fd[0][0]) ;
         // }
-        
 
-
-
+        if (readFromPipe) {
+            cerr << now_pipe_count << ", write close parent "<< pipe_array[now_pipe_count ][1] << endl;
+            close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
+        } 
         int childpid ;
-
+        cerr<< "before fork !!!!"<<endl;
         if ( (childpid = fork()) < 0) 
             err_dump("server: fork error");
         else if (childpid > 0) //parent
@@ -554,8 +548,9 @@ do_pipe=1;
 
             // close(pipe_fd[now_pipe_count][0]);
             // close(pipe_fd[now_pipe_count][1]);
-            if (writeToPipe)
+            if (writeToPipe)//先
             {
+                // cerr<<"do write to piep" << endl;
                 /** 要處理多個指令的out給同個指令的情況
                     欸欸，根你說唷。 
                     這個指令需要寫道pipe，所以關掉pipe的輸出端，
@@ -569,11 +564,13 @@ do_pipe=1;
                 // pipe_array[now_pipe_count+temp][1] //此index同,但裡面已揪有誰要write他的id
                 // WriteSame_index = now_pipe_count+1;
                 // WriteSame_count = now_pipe_count;
-                close(pipe_fd[now_pipe_count][1]);
-            }
-            if (readFromPipe)//
+                }
+            if (readFromPipe)//後
             {
-                close(pipe_fd[pipe_array[now_pipe_count][1]][0]);//減一是因為single pipe
+
+                // close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
+                close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);//減一是因為single pipe
+                cerr << now_pipe_count << ", readFromPipe" << endl;
             }
         }
         else if (childpid == 0)
@@ -587,69 +584,118 @@ do_pipe=1;
           // STDIN_OLD  = dup(STDIN_FILENO);
           // STDOUT_OLD = dup(STDOUT_FILENO);
 
-              if (write_file == 0) dup2(fd, STDOUT_FILENO); 
+            if (write_file == 0) dup2(fd, STDOUT_FILENO); 
           // dup2 ( fd , 1); 
 
-                if (readFromPipe) 
+                if (readFromPipe) //後
                 {
                     /**not the fisrt command*/
 
-                    dup2(pipe_fd[now_pipe_count][0], STDIN_FILENO);//減一是因為single pipe
+                    cerr << now_pipe_count << ",child read from pipe: " << pipe_array[now_pipe_count][1] << endl;
+
+                    dup2(pipe_fd[pipe_array[now_pipe_count][1]][0], STDIN_FILENO);//減一是因為single pipe
                     // dup2(pipe_fd[pipe_array[now_pipe_count][1]][1], STDIN_FILENO);//減一是因為single pipe
-                    close(pipe_fd[now_pipe_count][0]);
+                    close(pipe_fd[pipe_array[now_pipe_count][1]][0]);
+                    cerr << now_pipe_count << ", read close child "<< pipe_array[now_pipe_count ][1] << endl;
                 }
-                if (writeToPipe) 
+                if (writeToPipe) //先
                 {
                     // write(pipe_fd[pipe_array[WriteSame_index][1]][1],&pipe_fd[ pipe_array[now_pipe_count][0] ][0], sizeof(int)); 
-                    dup2(pipe_fd[now_pipe_count][1], STDOUT_FILENO);
-                    close(pipe_fd[now_pipe_count][1]);
+
+                    if(samepipe)
+                    {
+                        cerr << now_pipe_count << ", in the samepipe" << endl;
+                        cerr << now_pipe_count << ", write close child "<< pipe_array[now_pipe_count ][1] << endl;
+                        dup2 (pipe_fd[ WriteSame_count ][1], STDOUT_FILENO);
+                    }
+                    else 
+                    {
+                        dup2(pipe_fd[now_pipe_count][1], STDOUT_FILENO);
+                        close(pipe_fd[now_pipe_count][1]);
+                    }
                 }
              // fprintf (stderr,"--k\n"); // std::cout << "----in the fork----"  <<std::endl;
-                cerr << "exec command!!!" << endl;
-                dup2 ( fd , STDERR_FILENO);
+                cerr << now_pipe_count<<",exec command!!!" << endl;
+
+                // dup2 ( fd , STDERR_FILENO);
                 if(execvp(line[j][0],line[j])== -1)
                 {
-
-                    dup2(fd,STDOUT_FILENO);
-                    legal_cmd = "non";
-                    std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    // fprintf (stderr,"legaglll=%d $$$$$$\n",legal_cmd); 
-                    dup2(pipe_fd[now_pipe_count-1][1], STDOUT_FILENO);
-                    // j=line_sep_count;
+                    // dup2(fd,STDOUT_FILENO);
+                    // legal_cmd = "non";
                     // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    return 0;
+                    
+                    // dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
+                    //  // signal(SIGCHLD, reaper);
+                    // // j=line_sep_count;
+                    // // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
+                    // exit(1);
+
+                    // raise(SIGINT);
+                    // signal (SIGINT, my_handler);
+                    // return 0;
                 }
-
         }//childpid
-        // if(childpid>0){}
-            wait(NULL);           
+        
+        cerr<< "after fork !!!!"<<endl;
 
-            fprintf (stderr,"!!!finish forkkk\n");
-            if( strcmp(legal_cmd,"legal")==0)/*應該要legal, 且前面有pipe ,才要 now_cont ＋1 */
-            {
-                for (int i=0;i<=now_pipe_count;i++)pipe_array[i][0]--;//所有都要 --
-                 // fprintf (stderr,"legaglll=%d $$$$$$\n",legal_cmd); 
-                    now_count++;
-                fprintf (stderr,"count=%d\n",now_count);              
+        // wait(NULL);
+        cerr << "before wait" << endl;
+        int status;
+        wait(&status);
+        fprintf (stderr,"a--********************** %d---\n",status);
+        cerr << "after wait" << endl;
+        // if((!readFromPipe) && (!writeToPipe)){
+        //     close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);
+        //     close(pipe_fd[ pipe_array[now_pipe_count ][1]] [1]);
+        // }
+
+        
+        fprintf (stderr,"ID = %d \n" , now_pipe_count);
+
+        if (status == 0) 
+        {
+           
+           for (int i=0;i<=now_pipe_count;i++)pipe_array[i][0]--;
+            now_pipe_count++; 
+        }  
+        else 
+        {
+           close(pipe_fd[pipe_array[now_pipe_count][1]][0]);
+           close(pipe_fd[pipe_array[now_pipe_count][1]][1]);
+        }
+        
+        
+
+        // fprintf (stderr,"!!!finish forkkk\n");
+            // if( strcmp(legal_cmd,"legal")==0)/*應該要legal, 且前面有pipe ,才要 now_cont ＋1 */
+            // {
+            //     for (int i=0;i<=now_pipe_count;i++)pipe_array[i][0]--;//所有都要 --
+            //      // fprintf (stderr,"legaglll=%d $$$$$$\n",legal_cmd); 
+            //     //     now_count++;
+            //     // fprintf (stderr,"count=%d\n",now_count);              
                 
-            }   
-            if( strcmp(legal_cmd,"legal")==0 && line_sep_count>1)/*應該要legal, 且前面有pipe ,才要 now_cont ＋1 */
-            {
-               
-                now_pipe_count++;
-                
-            } 
-            if(strcmp(legal_cmd,"non")==0)
-            {
-                fprintf (stderr,"not legaglll $$$$$$\n");
-            }
+            // }   
+            // if( strcmp(legal_cmd,"legal")==0 && line_sep_count>1)/*應該要legal, 且前面有pipe ,才要 now_cont ＋1 */
+            // {
+
+            //     // now_pipe_count++;
+
+            // } 
+            // if(strcmp(legal_cmd,"non")==0)
+            // {
+            //     fprintf (stderr,"not legaglll $$$$$$\n");
+            // }
 // fprintf (stderr,"not legagllll  $$$$$$$$ \n");
-    }
+        }
 
 
     // }
 // memset(array, 0, sizeof(array[0][0]) * m * n);
 
+}
+void my_handler (int param)
+{
+  signaled = 1;
 }
 // int output(int fd,char* output_line)
 // {
@@ -663,7 +709,7 @@ do_pipe=1;
 // }
     int readline(int fd, char * ptr, int maxlen) 
     { 
-        fprintf (stderr,"--rrrrrrrrrrrrr\n");
+        // fprintf (stderr,"--rrrrrrrrrrrrr\n");
         int n, rc; char c; 
         for (n = 1; n < maxlen; n++)
         { 
@@ -702,10 +748,36 @@ void welcome (int sockfd)
 
 }
 
-// void accept()
-// {
+bool isKnownCommand(char *path, char *cmd) {
+    int i=0;
+    char* pch[10];
+     // cerr<<"pch[i]"<<path<<endl; 
+    pch[0] = strtok(path,":");
+    // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
+    while (path[i] != NULL)
+    {   
+        i++;            
+        pch[i] = strtok (NULL, ":"); 
+       
+        // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+    }
 
+    for(int j=0;j<i;j++)
+    {
+        struct dirent *ent; 
+        DIR *dir;
+        if ((dir = opendir(pch[j])) != NULL) 
+        {
+            while ( (ent = readdir(dir)) != NULL) 
+            {
+                if (strcmp(ent->d_name, cmd) == 0) {
+                    // cerr<<"*********"<<endl;
+                    return true;
+                }
+            }
+        }
 
+     }   
 
-
-// }
+   return false;
+}
