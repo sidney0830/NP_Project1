@@ -1,3 +1,9 @@
 ls |1
 ctt
 number
+ls |1 ctt
+cat
+ls |1 ctt | cat
+cat | cat
+ls |3 removetag test.html |2 ls |1 cat
+exit

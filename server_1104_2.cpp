@@ -60,6 +60,7 @@ int  main(int argc, char *argv[])
     clear_pipe();
     
     setenv("PATH","bin:.",1);
+    
     int directory = chdir("./ras");
 	/*
      * Open a TCP socket (an Internet stream socket).
@@ -309,28 +310,35 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
     fprintf (stderr,"%slengh=%d  %s-%s-%s-%s\n","[[PARSE START]]",line_sep_count,line[0][0],line[1][0],line[2][0],line[3][0]);
     // fprintf (stderr,"sizeof line[0] = %d",sizeof(line[0])/sizeof( line[0][0] ));
     // for(int i=0;i<line_sep_count;i++)
-    // {
+    // {char *patt=getenv("PATH");
     //可能要有for去跑去掉空白的一個指令   //一行多個指令
 // prev_handler = signal (SIGINT, my_handler);
     int write_file=0;
     int WriteSame_index=-1;
     int WriteSame_count=-1;
     char *filename;
-
+    
+    char *patt ;
     // bool writeToPipe = false, readFromPipe = false;
     char *legal_cmd="legal";
     // remove_space(line[MAXLINE])
 
     for(int j=0;j<line_sep_count;j++)
     {
-        cerr << "cmd: " << line[j][0] << endl;
-        bool tt = isKnownCommand("bin", "ls");
-        cerr << "is know "<< tt <<endl;
-
+        patt = getenv("PATH");
         if(line[j][0]==NULL)
         {
             return 0;
         }
+
+        // if (isKnownCommand("bin", line[j][0])) {
+        //     int unknownCmd = true;
+        // }
+
+        // cerr << "cmd: " << line[j][0] << endl;
+        // bool tt = isKnownCommand("bin", line[j][0]);
+        // cerr << "is know "<< tt <<endl;
+
         bool samepipe=0;
         bool known=1;
         legal_cmd="legal";
@@ -445,6 +453,28 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
             close(fd);
             exit(0);
         }
+         // bool tt = isKnownCommand("bin", line[j][0]);
+         // cerr<< env <<" ,issssssssss" <<endl;
+        // patt = strtok(patt,":");
+// patt = strtok(patt,":");
+//   while (patt != NULL)
+//   {
+//     // printf ("%s\n",patt);
+//     patt = strtok (NULL, ":");
+//   }    
+    if(strcmp(patt,"bin:.")==0)patt="bin";
+    if(strcmp(patt,".")==0)patt=".";
+
+        if (!isKnownCommand("bin",line[j][0]))
+        {
+            dup2 (fd, STDERR_FILENO);
+            dup2 (fd, STDOUT_FILENO);
+                    // legal_cmd = "non";
+            std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
+                    
+            // dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
+            return 0;
+        }
         for (int i = 0; line[j][i]!=NULL; i++) /* do this write to file "<"  */
         {
             fprintf (stderr,"i==%d,count=%d \n" , i ,line_sep_count);
@@ -499,11 +529,11 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
         // }
 
         if (readFromPipe) {
-            cerr << now_pipe_count << ", write closssssssssss "<< pipe_array[now_pipe_count ][1] << endl;
+            cerr << now_pipe_count << ", write close parent "<< pipe_array[now_pipe_count ][1] << endl;
             close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
         } 
         int childpid ;
-
+        cerr<< "before fork !!!!"<<endl;
         if ( (childpid = fork()) < 0) 
             err_dump("server: fork error");
         else if (childpid > 0) //parent
@@ -538,6 +568,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                 }
             if (readFromPipe)//後
             {
+
                 // close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
                 close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);//減一是因為single pipe
                 cerr << now_pipe_count << ", readFromPipe" << endl;
@@ -561,11 +592,12 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                 {
                     /**not the fisrt command*/
 
-                    cerr << now_pipe_count << ", read from pipe: " << pipe_array[now_pipe_count][1] << endl;
+                    cerr << now_pipe_count << ",child read from pipe: " << pipe_array[now_pipe_count][1] << endl;
 
                     dup2(pipe_fd[pipe_array[now_pipe_count][1]][0], STDIN_FILENO);//減一是因為single pipe
                     // dup2(pipe_fd[pipe_array[now_pipe_count][1]][1], STDIN_FILENO);//減一是因為single pipe
                     close(pipe_fd[pipe_array[now_pipe_count][1]][0]);
+                    cerr << now_pipe_count << ", read close child "<< pipe_array[now_pipe_count ][1] << endl;
                 }
                 if (writeToPipe) //先
                 {
@@ -574,6 +606,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
                     if(samepipe)
                     {
                         cerr << now_pipe_count << ", in the samepipe" << endl;
+                        cerr << now_pipe_count << ", write close child "<< pipe_array[now_pipe_count ][1] << endl;
                         dup2 (pipe_fd[ WriteSame_count ][1], STDOUT_FILENO);
                     }
                     else 
@@ -585,28 +618,27 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
              // fprintf (stderr,"--k\n"); // std::cout << "----in the fork----"  <<std::endl;
                 cerr << now_pipe_count<<",exec command!!!" << endl;
 
-                dup2 ( fd , STDERR_FILENO);
+                // dup2 ( fd , STDERR_FILENO);
                 if(execvp(line[j][0],line[j])== -1)
                 {
-                    dup2(fd,STDOUT_FILENO);
-                    legal_cmd = "non";
-                    std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    
-                    dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
-                     // signal(SIGCHLD, reaper);
-                    // j=line_sep_count;
+                    // dup2(fd,STDOUT_FILENO);
+                    // legal_cmd = "non";
                     // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
-                    exit(1);
+                    
+                    // dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
+                    //  // signal(SIGCHLD, reaper);
+                    // // j=line_sep_count;
+                    // // std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
+                    // exit(1);
 
                     // raise(SIGINT);
                     // signal (SIGINT, my_handler);
                     // return 0;
                 }
-
-
         }//childpid
         
-        
+        cerr<< "after fork !!!!"<<endl;
+
         // wait(NULL);
         cerr << "before wait" << endl;
         int status;
