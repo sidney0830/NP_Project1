@@ -1,0 +1,35 @@
+****************************************
+** Welcome to the information server. **
+****************************************
+% printenv PATH
+PATH=bin:.
+% ls
+bin
+demo3_out1.txt
+demo3_out2.txt
+demo3_out3.txt
+ls.txt
+number
+outtest1.txt
+outtest2.txt
+setenv
+test.html
+% setenv PATH .
+% printenv PATH
+PATH=.
+% ls
+Unknown command: [ls]
+% setenv PATH bin
+% ls -al bin
+total 212
+drwxr-xr-x 2 sidney sidney   4096 11月  4 16:55 .
+drwxrwxr-x 3 sidney sidney   4096 11月  4 18:16 ..
+-rwxr-xr-x 1 sidney sidney  47760 11月  4 16:55 cat
+-rwxr-xr-x 1 sidney sidney 105840 11月  4 16:55 ls
+-rwxr-xr-x 1 sidney sidney   9328 11月  4 16:55 noop
+-rwxr-xr-x 1 sidney sidney  14580 11月  4 16:55 number
+-rwxr-xr-x 1 sidney sidney   8824 11月  4 16:55 removetag
+-rwxr-xr-x 1 sidney sidney   8990 11月  4 16:55 removetag0
+% date
+Unknown command: [date]
+% exit

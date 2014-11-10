@@ -310,6 +310,8 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE])
             env = getenv(line[1]);
             if(env != NULL)
             {
+                send(fd,line[1],strlen(line[1]),0);
+                send(fd,"=",1,0);
                 send(fd,env,strlen(env),0);
                 send(fd,"\n",1,0);
                 // output();
@@ -323,6 +325,12 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE])
         {
             // printf ("*********************%s********\n","sentev");
             setenv(line[1], line[2], 1);
+            return 0;           
+        }
+        else if(strcmp(line[0],"remove")==0)
+        {
+                // printf ("*********************%s********\n","sentev");
+            setenv(line[1],"", 1);
             return 0;           
         }
         else if(strcmp(line[0],"exit")==0)

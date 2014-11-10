@@ -1,0 +1,1 @@
+removetag0 test.html | number | cat

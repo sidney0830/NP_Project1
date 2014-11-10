@@ -1,0 +1,4 @@
+setenv TA handsome
+printenv TA
+remove TA
+printenv TA

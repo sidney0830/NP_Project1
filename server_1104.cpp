@@ -439,7 +439,12 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
             setenv(line[j][1], line[j][2], 1);
             return 0;           
         }
-
+        else if(strcmp(line[j][0],"remove")==0)
+        {
+                // printf ("*********************%s********\n","sentev");
+            setenv(line[j][1],"", 1);
+            return 0;           
+        }
         else if(strcmp(line[j][0],"exit")==0)///////////////// ???
         {
             close(fd);

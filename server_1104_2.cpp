@@ -22,33 +22,30 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#define SERV_TCP_PORT 3000
+#define SERV_TCP_PORT 5555
 
-#define MAXLINE 10000
-#define MAXPIPE 10000  //pipe nubers
-#define MAXCMD  10
-#define MAXINTPIPE 1001 //pipe |N   1=<N<=1000
+#define MAXLINE 10100
+#define MAXPIPE 10100  //pipe nubers
+#define MAXCMD  100
+#define MAXINTPIPE 10100 //pipe |N   1=<N<=1000
 using std::cout;
 using namespace std;
 
-int readline(int fd, char * ptr, int maxlen) ;
-void err_dump (char *message);
-void str_echo (int sockfd);
-void welcome (int sockfd);
-char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD]);
-int cut_line (int fd,char *line,int debug);
-int cut_line_pipe (int fd,char *line,int debug);
 int STDIN_OLD,STDOUT_OLD,STDERR_OLD;
 int pipe_array[MAXPIPE][3];//0:ouput to whom // 1: get input ? //finish ?? 
 int pipe_fd[MAXPIPE][2];
 int now_pipe_count= 0;
-int now_count=0;
-// int now_pipe_count = 0;
-int childState;
+
+int readline(int fd, char * ptr, int maxlen) ;
+int parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD]);
+int cut_line (int fd,char *line,int debug);
+void err_dump (char *message);
+void str_echo (int sockfd);
+void welcome   (int sockfd);
+void cut_line_pipe (int fd,char *line,int debug);
 void clear_pipe();
-void (*prev_handler)(int);
-void my_handler (int param);
 bool isKnownCommand(char *path, char *cmd);
+void err_dump(const char *msg);
 
 sig_atomic_t signaled = 0;
 
@@ -110,19 +107,19 @@ int  main(int argc, char *argv[])
 
             fprintf(stderr, "---------childpid ---------\n");
                 /* close original socket */
-        close(sockfd);
+            close(sockfd);
 
-                    /* process the request */
-        welcome(newsockfd);
-        str_echo(newsockfd); 
+                        /* process the request */
+            welcome(newsockfd);
+            str_echo(newsockfd); 
 
-        close(newsockfd);
-        fprintf(stderr, "---------client close connention\n" );
-        exit(0);
-    }
+            close(newsockfd);
+            fprintf(stderr, "---------client close connention\n" );
+            exit(0);
+        }
         close(newsockfd); /* parent process */
 
-}
+    }
 }
 void clear_pipe(){
     for(int i=0; i < MAXPIPE; i++)
@@ -136,7 +133,7 @@ void clear_pipe(){
 void str_echo(int sockfd)
 {
 	int n;
-	char line[MAXLINE]={0};
+	char line[MAXLINE];
     int debug=0;
     // char eee []="exit";
     for ( ; ; )
@@ -177,82 +174,80 @@ void str_echo(int sockfd)
 }
 
 
-int cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
-{
-    char *delim = "|";
-    char *delim_space= " \n\r\t";
-    char * pch [MAXLINE];
-    char *threeDArray[MAXLINE][MAXCMD];
-    // memset(pch, 0, sizeof(pch[0][0]) * m * n);
-    // printf ("Splitting string \"%s\" \n ",line);
-    fprintf(stderr, "--((cut_line_pipe))-Splitting string:\"%s\"  ",line);
-    int line_sep_count=0;
-    pch[line_sep_count] = strtok(line,delim);
-    // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
-    while (pch[line_sep_count] != NULL)
-    {
-        line_sep_count++;
-        now_pipe_count++;
-        pch[line_sep_count] = strtok (NULL, delim);         
-        // threeDArray[line_sep_count]=strtok(NULL,delim_space);
-    } 
-    int a;
+// void cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
+// {
+//     char delim [2]= "|";
+//     char delim_space[10]= " \n\r\t";
+//     char * pch [MAXLINE];
+//     char *threeDArray[MAXLINE][MAXCMD];
+//     // memset(pch, 0, sizeof(pch[0][0]) * m * n);
+//     // printf ("Splitting string \"%s\" \n ",line);
+//     fprintf(stderr, "--((cut_line_pipe))-Splitting string:\"%s\"  ",line);
+//     int line_sep_count=0;
+//     pch[line_sep_count] = strtok(line,delim);
+//     // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
+//     while (pch[line_sep_count] != '\0')
+//     {
+//         line_sep_count++;
+//         now_pipe_count++;
+//         pch[line_sep_count] = strtok (NULL, delim);         
+//         // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+//     } 
+//     int a;
 
-    for (int i=0;i<line_sep_count;i++)
-    {
-        int line_sep_count_space=0;
-        threeDArray[i][line_sep_count_space]=strtok(pch[i],delim_space);
-        while (threeDArray[i][line_sep_count_space] != NULL)
-        {
+//     for (int i=0;i<line_sep_count;i++)
+//     {
+//         int line_sep_count_space=0;
+//         threeDArray[i][line_sep_count_space]=strtok(pch[i],delim_space);
+//         while (threeDArray[i][line_sep_count_space] != NULL)
+//         {
 
-            line_sep_count_space++;
-            threeDArray[i][line_sep_count_space] = strtok (NULL, delim_space);         
-         // threeDArray[line_sep_count]=strtok(NULL,delim_space);
-        } 
-        a=line_sep_count_space;
+//             line_sep_count_space++;
+//             threeDArray[i][line_sep_count_space] = strtok (NULL, delim_space);         
+//          // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+//         } 
+//         a=line_sep_count_space;
         
-    }
-    fprintf(stderr, "-(list array)-\n");
-    for(int j=0;j<line_sep_count;j++)
-    {
-        for(int i=0;i<4;i++)
-        {////////////////////
-            fprintf(stderr, "-%s",threeDArray[j][i]);
-        }
-        fprintf(stderr, "\n");
-    }
+//     }
+//     fprintf(stderr, "-(list array)-\n");
+//     for(int j=0;j<line_sep_count;j++)
+//     {
+//         for(int i=0;i<4;i++)
+//         {////////////////////
+//             fprintf(stderr, "-%s",threeDArray[j][i]);
+//         }
+//         fprintf(stderr, "\n");
+//     }
     
 
-    // {
+//     // {
 
-    //     pipe_array[pipe_th][0]= find line[]; //output to whom ? //find " | "
-    //     pipe_array[pipe_th][1]=  //intput get whose ? 
-    //     pipe_array[pipe_th][2]=  //done or not
-
-
-
-    // }
-
-    // threeDArray
-
-
-    parse(fd,line_sep_count,threeDArray);
-    dup2(STDIN_OLD,0);
-    dup2(STDERR_OLD,2);
-    memset(line, 0, sizeof line);
+//     //     pipe_array[pipe_th][0]= find line[]; //output to whom ? //find " | "
+//     //     pipe_array[pipe_th][1]=  //intput get whose ? 
+//     //     pipe_array[pipe_th][2]=  //done or not
 
 
 
-}
+//     // }
+
+//     // threeDArray
+
+
+//     parse(fd,line_sep_count,threeDArray);
+//     dup2(STDIN_OLD,0);
+//     dup2(STDERR_OLD,2);
+//     // memset(line, 0, sizeof(line));
+
+// }
 
 
 int cut_line (int fd,char *line ,int debug)
 {
     fprintf(stderr, "begin cut line \n");
-    char *delim = " \n\r\t";
+    char delim[10] = " \n\r\t";
     char * pch [MAXLINE];
     char *threeDArray[MAXLINE][MAXCMD];
-    memset(threeDArray, 0, sizeof(threeDArray[0][0]) * MAXLINE * MAXCMD);
+    // memset(threeDArray, 0, sizeof(threeDArray[0][0]) * MAXLINE * MAXCMD);
     // printf ("Splitting string \"%s\" \n ",line);
     fprintf(stderr, "---Splitting string %s \n ",line);
     int line_sep_count=0;
@@ -262,23 +257,25 @@ int cut_line (int fd,char *line ,int debug)
         line_sep_count++;
         pch[line_sep_count] = strtok (NULL, delim);    
     } 
+    
     int j=0;
+    
     for(int i=0,k=0;i<line_sep_count;i++)
     {
-     threeDArray[j][k] = pch[i] ;
-          // fprintf(stderr, "@@%s",threeDArray[j][k]);
-     if(pch[i][0]=='|')
-     {
-         j++;
-         k=0;
-     }
-     else
-     {
-         k++;
-     }
- }
+        threeDArray[j][k] = pch[i] ;
+              // fprintf(stderr, "@@%s",threeDArray[j][k]);
+        if(pch[i][0]=='|')
+        {
+            j++;
+            k=0;
+        }
+        else
+        {
+            k++;
+        }
+    }
 
- line_sep_count=j+1;
+    line_sep_count=j+1;
 
     // for(int j=0;j<line_sep_count;j++)
     // {
@@ -289,38 +286,33 @@ int cut_line (int fd,char *line ,int debug)
     //     fprintf(stderr, "\n");
     // }
 
- parse(fd,line_sep_count,threeDArray);
- dup2(STDIN_OLD,0);
- dup2(STDOUT_OLD,2);
-    // printf ("=cut line=%d===debg = %d/",line_sep_count,debug);
+    parse(fd,line_sep_count,threeDArray);
+    dup2(STDIN_OLD,0);
+    dup2(STDOUT_OLD,2);
 
-    // printf ("===2===%s====\n",pch[1]);
-
-    // printf ("===3===%s====\n",pch[2]);
-
-
- return 0;
+    return 0;
 }
 
 
 
 
-char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
+int parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
 {
     fprintf (stderr,"%slengh=%d  %s-%s-%s-%s\n","[[PARSE START]]",line_sep_count,line[0][0],line[1][0],line[2][0],line[3][0]);
     // fprintf (stderr,"sizeof line[0] = %d",sizeof(line[0])/sizeof( line[0][0] ));
     // for(int i=0;i<line_sep_count;i++)
     // {char *patt=getenv("PATH");
     //可能要有for去跑去掉空白的一個指令   //一行多個指令
-// prev_handler = signal (SIGINT, my_handler);
+    // prev_handler = signal (SIGINT, my_handler);
+    
     int write_file=0;
     int WriteSame_index=-1;
     int WriteSame_count=-1;
-    char *filename;
-    
+    char *filename;    
     char *patt ;
+
     // bool writeToPipe = false, readFromPipe = false;
-    char *legal_cmd="legal";
+    // char *legal_cmd="legal";
     // remove_space(line[MAXLINE])
 
     for(int j=0;j<line_sep_count;j++)
@@ -341,7 +333,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
 
         bool samepipe=0;
         bool known=1;
-        legal_cmd="legal";
+        // legal_cmd="legal";
 
         WriteSame_index= -1;
         WriteSame_count= -1;
@@ -362,7 +354,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
 
                     writeToPipe = true;
                     cerr << now_pipe_count << ", Need to Write to Pipe: " << line[j][0] << endl;
-                    if(line[j][i][1]!=NULL)/// have pipe_number 
+                    if(line[j][i][1]!='\0')/// have pipe_number 
                     { 
                         int temp = atoi(++line[j][i]);
                         /*pipe_array[now_pipe_count][0]:record to input which pipe*/
@@ -426,7 +418,7 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
         if(strcmp(line[j][0],"printenv")==0)
         {
 
-                ///裡面要有cut_cmd 去切切切
+            ///裡面要有cut_cmd 去切切切
             
             env = getenv(line[j][1]);
             // char *pathh;
@@ -447,36 +439,44 @@ char * parse(int fd,int line_sep_count,char*line[MAXLINE][MAXCMD])
             setenv(line[j][1], line[j][2], 1);
             return 0;           
         }
-
-        else if(strcmp(line[j][0],"exit")==0)///////////////// ???
+        else if(strcmp(line[j][0],"remove")==0)
+        {
+                // printf ("*********************%s********\n","sentev");
+            setenv(line[j][1],"", 1);
+            return 0;           
+        }
+        if(strcmp(line[j][0],"exit")==0)///////////////// ???
         {
             close(fd);
             exit(0);
         }
-         // bool tt = isKnownCommand("bin", line[j][0]);
-         // cerr<< env <<" ,issssssssss" <<endl;
+        // bool tt = isKnownCommand("bin", line[j][0]);
+        // cerr<< env <<" ,issssssssss" <<endl;
         // patt = strtok(patt,":");
-// patt = strtok(patt,":");
-//   while (patt != NULL)
-//   {
-//     // printf ("%s\n",patt);
-//     patt = strtok (NULL, ":");
-//   }    
-    
-char *aaa=getenv("PATH");
-        if (!isKnownCommand(aaa,line[j][0]))
+        // patt = strtok(patt,":");
+        //   while (patt != NULL)
+        //   {
+        //     // printf ("%s\n",patt);
+        //     patt = strtok (NULL, ":");
+        //   }    
+        
+        char *aaa=getenv("PATH");
+        cerr << aaa  << "aaaaa ~~~ "<< endl;
+                    
+        if ( !isKnownCommand( aaa , line[j][0] ) )
         {
             dup2 (fd, STDERR_FILENO);
             dup2 (fd, STDOUT_FILENO);
-                    // legal_cmd = "non";
+
             std::cout << "Unknown command: [" << line[j][0] << "]" <<std::endl;
                     
             // dup2(pipe_fd [ pipe_array[now_pipe_count][1] ][1], STDOUT_FILENO);
             return 0;
         }
+        cerr << "-after isKnownCommand"<< endl;
         for (int i = 0; line[j][i]!=NULL; i++) /* do this write to file "<"  */
         {
-            fprintf (stderr,"i==%d,count=%d \n" , i ,line_sep_count);
+            // fprintf (stderr,"i==%d,count=%d \n" , i ,line_sep_count);
             // fprintf (stderr,"maydaycha: %d", line_sep_count);
             if (strcmp(line[j][i], ">") == 0) 
             {
@@ -495,7 +495,7 @@ char *aaa=getenv("PATH");
                 
                 break;
             }
-        }//for
+        }
         // if(access( ,F_OK)!=-1)
         
         /*是第一個且不是最後一個 , 中間項 *//*梅考慮：最後是 ｜ */
@@ -511,8 +511,7 @@ char *aaa=getenv("PATH");
             if(pipe_array[i][0]==0)//this now is pipe_array[now_pipe][1] = pipe fd
             {
                 readFromPipe=true;
-                cerr << now_pipe_count  << ", Need to Read from Pipe: " << line[j][0] << endl;
-                // once++;
+                cerr << now_pipe_count  << "＝now_pipe_count, Need to Read from Pipe: " << line[j][0] << endl;
             }
         }
         
@@ -527,12 +526,15 @@ char *aaa=getenv("PATH");
         //     // close( pipe_fd[0][0]) ;
         // }
 
-        if (readFromPipe) {
+        if (readFromPipe) 
+        {
             cerr << now_pipe_count << ", write close parent "<< pipe_array[now_pipe_count ][1] << endl;
             close(pipe_fd[ pipe_array[now_pipe_count ][1]][1] );
         } 
         int childpid ;
+        
         cerr<< "before fork !!!!"<<endl;
+        
         if ( (childpid = fork()) < 0) 
             err_dump("server: fork error");
         else if (childpid > 0) //parent
@@ -577,10 +579,10 @@ char *aaa=getenv("PATH");
         {
             STDERR_OLD = dup(2);
             /* this is child */
-          // close(pipe_fd[now_pipe_count][0]);
-          // fprintf (stderr,"--in dupp--\n");
+            // close(pipe_fd[now_pipe_count][0]);
+            // fprintf (stderr,"--in dupp--\n");
 
-          /**裡面要有cut_cmd 去切切切*/
+            /**裡面要有cut_cmd 去切切切*/
           // STDIN_OLD  = dup(STDIN_FILENO);
           // STDOUT_OLD = dup(STDOUT_FILENO);
 
@@ -615,7 +617,7 @@ char *aaa=getenv("PATH");
                     }
                 }
              // fprintf (stderr,"--k\n"); // std::cout << "----in the fork----"  <<std::endl;
-                cerr << now_pipe_count<<",exec command!!!" << endl;
+                // cerr << now_pipe_count<<",exec command!!!" << endl;
 
                 // dup2 ( fd , STDERR_FILENO);
                 if(execvp(line[j][0],line[j])== -1)
@@ -636,13 +638,13 @@ char *aaa=getenv("PATH");
                 }
         }//childpid
         
-        cerr<< "after fork !!!!"<<endl;
+        // cerr<< "after fork !!!!"<<endl;
 
         // wait(NULL);
         cerr << "before wait" << endl;
         int status;
         wait(&status);
-        fprintf (stderr,"a--********************** %d---\n",status);
+        // fprintf (stderr,"a--********************** %d---\n",status);
         cerr << "after wait" << endl;
         // if((!readFromPipe) && (!writeToPipe)){
         //     close(pipe_fd[ pipe_array[now_pipe_count ][1]] [0]);
@@ -650,7 +652,7 @@ char *aaa=getenv("PATH");
         // }
 
         
-        fprintf (stderr,"ID = %d \n" , now_pipe_count);
+        fprintf (stderr,"IIIIIIIID = %d \n" , now_pipe_count);
 
         if (status == 0) 
         {
@@ -685,17 +687,12 @@ char *aaa=getenv("PATH");
             // {
             //     fprintf (stderr,"not legaglll $$$$$$\n");
             // }
-// fprintf (stderr,"not legagllll  $$$$$$$$ \n");
+            // fprintf (stderr,"not legagllll  $$$$$$$$ \n");
         }
-
-
     // }
-// memset(array, 0, sizeof(array[0][0]) * m * n);
+    // memset(array, 0, sizeof(array[0][0]) * m * n);
 
-}
-void my_handler (int param)
-{
-  signaled = 1;
+    return 0;
 }
 // int output(int fd,char* output_line)
 // {
@@ -739,10 +736,9 @@ void err_dump (char *message)
 
 void welcome (int sockfd)
 {
-    // write (sockfd,,);
 // "****************************************\n** Welcome to the information server. **\n****************************************\n";
-    char *string;
-    string="****************************************\n** Welcome to the information server. **\n****************************************\n";
+    char string[200];
+    strcpy(string,"****************************************\n** Welcome to the information server. **\n****************************************\n");
     write(sockfd, string,strlen(string) ) ;
                 // err_dump("str_echo: writen error");
 
@@ -750,34 +746,51 @@ void welcome (int sockfd)
 
 bool isKnownCommand(char *path, char *cmd) {
     int i=0;
-    char* pch[10];
-     // cerr<<"pch[i]"<<path<<endl; 
+    char* pch[20];
+    char*pathh[10];
+    // cerr<<"****isKnownCommand *****"<<endl;
+     cerr<<"path  "<<path<<endl; 
+     //  fprintf(stderr, "pch [i] =%s\n" , path);
+
     pch[0] = strtok(path,":");
+    // pathh[0]=
+    // fprintf(stderr, "pch [0] =%s\n",pch[0]);
+// cerr << "****pch[i]= "<< pch[1] << endl;
     // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
-    while (path[i] != NULL)
+    while (path[i] != '\0')
     {   
         i++;            
-        pch[i] = strtok (NULL, ":"); 
-       
-        // threeDArray[line_sep_count]=strtok(NULL,delim_space);
-    }
+        pch[i] = strtok (NULL, ":"); // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+        if(pch[i]==NULL){break;}
+        // pch[i] =
+        fprintf(stderr, "pch [%d] =%s\n" ,i, pch[i]);
 
+    }
+// fprintf(stderr, "pch [i] ==%s\n" , path);
     for(int j=0;j<i;j++)
     {
         struct dirent *ent; 
         DIR *dir;
         if ((dir = opendir(pch[j])) != NULL) 
         {
+
             while ( (ent = readdir(dir)) != NULL) 
             {
-                if (strcmp(ent->d_name, cmd) == 0) {
-                    // cerr<<"*********"<<endl;
+                cerr << "****read  dir ent = "<< dir << endl;
+                if (strcmp(ent->d_name, cmd) == 0) 
+                {
                     return true;
                 }
             }
         }
-
      }   
 
    return false;
+}
+
+void err_dump(const char *msg)
+{
+        fprintf(stderr, "%s, errno = %d\n", msg,errno);
+    // //cout << msg << ", errno = " << errno << endl;
+        exit(1);
 }
