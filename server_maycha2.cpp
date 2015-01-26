@@ -25,7 +25,7 @@ maybe will crash in the future QQQQQQQQQQQ
 #include <sys/types.h>
 #include <dirent.h>
 
-#define SERV_TCP_PORT 5544
+#define SERV_TCP_PORT 5566
 
 #define MAXLINE 10100
 #define MAXPIPE 10100  //pipe nubers
@@ -179,6 +179,71 @@ void str_echo(int sockfd)
 }
 
 
+// void cut_line_pipe(int fd,char *line,int debug)////////// 切切切 pipe！
+// {
+//     char delim [2]= "|";
+//     char delim_space[10]= " \n\r\t";
+//     char * pch [MAXLINE];
+//     char *threeDArray[MAXLINE][MAXCMD];
+//     // memset(pch, 0, sizeof(pch[0][0]) * m * n);
+//     // printf ("Splitting string \"%s\" \n ",line);
+//     fprintf(stderr, "--((cut_line_pipe))-Splitting string:\"%s\"  ",line);
+//     int line_sep_count=0;
+//     pch[line_sep_count] = strtok(line,delim);
+//     // threeDArray[line_sep_count][0]=strtok(pch[line_sep_count],delim_space);
+//     while (pch[line_sep_count] != '\0')
+//     {
+//         line_sep_count++;
+//         now_pipe_count++;
+//         pch[line_sep_count] = strtok (NULL, delim);
+//         // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+//     }
+//     int a;
+
+//     for (int i=0;i<line_sep_count;i++)
+//     {
+//         int line_sep_count_space=0;
+//         threeDArray[i][line_sep_count_space]=strtok(pch[i],delim_space);
+//         while (threeDArray[i][line_sep_count_space] != NULL)
+//         {
+
+//             line_sep_count_space++;
+//             threeDArray[i][line_sep_count_space] = strtok (NULL, delim_space);
+//          // threeDArray[line_sep_count]=strtok(NULL,delim_space);
+//         }
+//         a=line_sep_count_space;
+
+//     }
+//     fprintf(stderr, "-(list array)-\n");
+//     for(int j=0;j<line_sep_count;j++)
+//     {
+//         for(int i=0;i<4;i++)
+//         {////////////////////
+//             fprintf(stderr, "-%s",threeDArray[j][i]);
+//         }
+//         fprintf(stderr, "\n");
+//     }
+
+
+//     // {
+
+//     //     pipe_array[pipe_th][0]= find line[]; //output to whom ? //find " | "
+//     //     pipe_array[pipe_th][1]=  //intput get whose ?
+//     //     pipe_array[pipe_th][2]=  //done or not
+
+
+
+//     // }
+
+//     // threeDArray
+
+
+//     parse(fd,line_sep_count,threeDArray);
+//     dup2(STDIN_OLD,0);
+//     dup2(STDERR_OLD,2);
+//     // memset(line, 0, sizeof(line));
+
+// }
 
 
 int cut_line (int fd,char *line ,int debug)

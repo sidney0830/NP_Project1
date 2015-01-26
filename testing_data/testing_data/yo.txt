@@ -1,0 +1,2 @@
+removetag test.html
+ls | number > ls.txt

@@ -1,0 +1,28 @@
+****************************************
+** Welcome to the information server. **
+****************************************
+% printenv PATH
+PATH=bin:.
+% ls
+bin
+test.html
+% setenv PATH .
+% printenv PATH
+PATH=.
+% ls
+Unknown command: [ls].
+% setenv PATH bin
+% ls -al bin
+total 236
+drwxr-xr-x 2 c0353416 course   4096 Nov 17 16:27 .
+drwxr-xr-x 3 c0353416 course   4096 Nov 18 03:50 ..
+-rwxr-xr-x 1 c0353416 course  52064 Nov 17 16:47 cat
+-rw-r--r-- 1 c0353416 course   6148 Nov 17 01:13 .DS_Store
+-rwxr-xr-x 1 c0353416 course 118432 Nov 17 16:47 ls
+-rwxr-xr-x 1 c0353416 course   6821 Nov 17 16:26 noop
+-rwxr-xr-x 1 c0353416 course  12031 Nov 17 16:26 number
+-rwxr-xr-x 1 c0353416 course   8269 Nov 17 16:27 removetag
+-rwxr-xr-x 1 c0353416 course   8851 Nov 17 16:27 removetag0
+% date
+Unknown command: [date].
+% exit

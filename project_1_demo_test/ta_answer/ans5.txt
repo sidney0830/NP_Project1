@@ -1507,5 +1507,8 @@
 % cat |1 cat |1
 % cat |1 cat
 bin
+ls.txt
+outtest1.txt
+outtest2.txt
 test.html
 % exit 

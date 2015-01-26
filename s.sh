@@ -1,4 +1,4 @@
-g++ server_1104_2.cpp -o server
+g++ server.cpp -o server
 
 if [ "$?" == "0" ]; then
 	./server
